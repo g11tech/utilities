@@ -244,15 +244,15 @@ const numArr = [];
 let mismatch = 0;
 for (i = 0; i < 1000000; i++) {
   const tnum = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-  let mx = getNumberInt(getNumberBytes(tnum, (i % 7) + 1, "le"), "le");
-  let my = Number(bytesToBigInt(intToBytes(BigInt(tnum), (i % 7) + 1, "le"), "le"));
+  let mx = getNumberInt(getNumberBytes(tnum, (i % 8) + 1, "le"), "le");
+  let my = Number(bytesToBigInt(intToBytes(BigInt(tnum), (i % 8) + 1, "le"), "le"));
   if (mx != my) mismatch = mismatch + 1;
 
   // console.log(getNumberBytes(tnum,7,"le"),intToBytes(BigInt(tnum),7,"le"))
   // console.log(getNumberBytes(tnum,8,"be"),intToBytes(BigInt(tnum),8,"be"))
 
-  mx = getNumberInt(getNumberBytes(tnum, (i % 7) + 1, "be"), "be");
-  my = Number(bytesToBigInt(intToBytes(BigInt(tnum), (i % 7) + 1, "be"), "be"));
+  mx = getNumberInt(getNumberBytes(tnum, (i % 8) + 1, "be"), "be");
+  my = Number(bytesToBigInt(intToBytes(BigInt(tnum), (i % 8) + 1, "be"), "be"));
   if (mx != my) mismatch = mismatch + 1;
   numArr.push(tnum);
 }
@@ -263,8 +263,8 @@ nd = new Date().getTime();
 idx=0;
 numArr.forEach((tnum) => {
   idx = idx + 1;
-  nx = Number(bytesToBigInt(intToBytes(BigInt(tnum), (idx % 7) + 1, "le"), "le"));
-  nx = Number(bytesToBigInt(intToBytes(BigInt(tnum), (idx % 7) + 1, "be"), "be"));
+  nx = Number(bytesToBigInt(intToBytes(BigInt(tnum), (idx % 8) + 1, "le"), "le"));
+  nx = Number(bytesToBigInt(intToBytes(BigInt(tnum), (idx % 8) + 1, "be"), "be"));
 });
 ne = new Date().getTime();
 bTime = bTime + ne - nd;
@@ -275,8 +275,8 @@ nd = new Date().getTime();
 idx = 0;
 numArr.forEach((tnum) => {
   idx = idx + 1;
-  nx = getNumberInt(getNumberBytes(tnum, (idx % 7) + 1, "le"), "le");
-  nx = getNumberInt(getNumberBytes(tnum, (idx % 7) + 1, "be"), "be");
+  nx = getNumberInt(getNumberBytes(tnum, (idx % 8) + 1, "le"), "le");
+  nx = getNumberInt(getNumberBytes(tnum, (idx % 8) + 1, "be"), "be");
 });
 ne = new Date().getTime();
 nTime = nTime + ne - nd;
