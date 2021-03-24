@@ -19,15 +19,8 @@ function bigIntToBytes(value, length, endianness = "le") {
 }
 
 function intToBytes(value, length, endianness = "le") {
-  switch (typeof value) {
-    case "number":
-      getInt64Bytes(value, length, endianness);
-    case "bigint":
-      return bigIntToBytes(BigInt(value), length, endianness);
-      break;
-    default:
-      throw new Error(`unsupported number type ${typeof value}`);
-  }
+  return bigIntToBytes(BigInt(value), length, endianness);
+  
 }
 
 function bytesToInt(value, endianness = "le") {
