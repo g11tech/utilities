@@ -28,7 +28,7 @@ Similarly *root* of a *[merkle tree](https://en.wikipedia.org/wiki/Merkle_tree)*
 [Trie it out here](https://github.com/ftruzzi/ethereum-learning-notes/blob/master/01-understanding-the-trie.md):wink:.
 
 ##### Note-2: correspondance between a data map and a polynomial
-The map of `indexes => values` can be represented as a [polynomial](https://en.wikipedia.org/wiki/Polynomial) `f(x)` which takes the value `f(index)=value` courtesy of [Langrange Interpolation ](https://en.wikipedia.org/wiki/Lagrange_polynomial). This `f(index)=value` is called *evaluation form*  and the more typical representation `f(x)=a0+ a1.x + a2.x^2...` is called *coefficient form*. Intuitively, we *fit* a polynomial on the `(index,value)` points.
+The map of `indexes => values` can be represented as a [polynomial](https://en.wikipedia.org/wiki/Polynomial) `f(x)` which takes the value `f(index)=value` courtesy of [Lagrange Interpolation ](https://en.wikipedia.org/wiki/Lagrange_polynomial). This `f(index)=value` is called *evaluation form*  and the more typical representation `f(x)=a0+ a1.x + a2.x^2...` is called *coefficient form*. Intuitively, we *fit* a polynomial on the `(index,value)` points.
 ![](https://i.imgur.com/zttn0WD.png)
 
 
@@ -105,13 +105,13 @@ Here notation `[t]` means elliptical curve at point `t` which is basically `t[1]
 ##### Note3.2: `s` is a secret and should be unknown forever to all/any but elliptical curve points `[s]`, `[s^2]`...`[s^d]` as well as evaluation on another curve `[s]'` (whose generator is `[1]'`, only `[s]'` is required) are generated, known, shared and public at trusted setup time, and are sort of *system parameters*.
 
 As mentioned before, we represent our data map (`index=>value`) as `f(w^index)=value` i.e.  *evaluation form* of the polynomial (or in other words we *fitted* a polynomial here on these `(w^index,value)` points).
-So Kate commitment is just another evaluated point  `f(s)` on the elliptical curve i.e. `[f(s)]=f([s])` i.e. can be computed by plugging  `[s]`,`[s^2]` ... into expanded form of `f(x)`.
+So Kate commitment is just an  evaluated point  `f(s)` on the elliptical curve i.e. `[f(s)]=f([s])` i.e. can be computed by plugging  `[s]`,`[s^2]` ... into expanded form of `f(x)`.
 
 So whats the good thing about this: 
 * [Verification of the commitment](https://dankradfeist.de/ethereum/2020/06/16/kate-polynomial-commitments.html) can be done by providing another evaluation (provided by the block generator) `y=f(r)`  of the underlying polynomial at a **random** point `r` and  evaluation of the quotient polynomial `q(x)=(f(x)-y)/(x-r))` at `[s]` i.e. `q([s])`  and comparing with the previously provided commitment `f([s])` using a *[pairing equation](https://vitalik.ca/general/2017/01/14/exploring_ecp.html)* (which is just a multiplication scheme for two points on curve) 
 This is called *opening* the commitment at `r`, and `q([s])` is the *proof*. one can easily see that `q(s)` is intutively the quotient `p(s)-r` divided by `s-r` which is exactly what we check using the [pairing equation] i.e. check `(f([s])-[y]) * [1]'= q([s]) * [s-r]'`
 * In non interactive and deterministic version [Fiat Shamir Heuristic](https://en.wikipedia.org/wiki/Fiat%E2%80%93Shamir_heuristic) provides a way for us to get that relative **random** point `r` as randomness only matters with respect to inputs we are trying to prove. i.e. once commitment `C=f([s])` has been provided, `r` can be obtained by hashing all *inputs* (`r=Hash(C,..)`), where the *commitment provider* has to provide the *opening* and *proof*. 
-* As you can see [here](https://notes.ethereum.org/nrQqhVpQRi6acQckwm1Ryg?view), `f([s])`,`q([s])` can be directly computed from the *evaluation form*. To compute an *opening* at `r`, you would convert the `f(x)` to *coefficient form* `f(x)=a0+ a1*x^1....` (i.e. extract `a0`,`a1`,...) by doing the *inverse FFT* which is `O(d log d)`, but even there is a [substitue algorithm available](https://ethresear.ch/t/kate-commitments-from-the-lagrange-basis-without-ffts/6950/6) to do it in `O(d)` without applying (inverse)`FFT`.
+* Using [preccomputed Lagrange polynomials](https://notes.ethereum.org/nrQqhVpQRi6acQckwm1Ryg?view#Lagrange-polynomials), `f([s])`,`q([s])` can be [directly computed](https://notes.ethereum.org/AALpIfEzRWWExA5EVzLjOA) from the *evaluation form*. To compute an *opening* at `r`, you would convert the `f(x)` to *coefficient form* `f(x)=a0+ a1*x^1....` (i.e. extract `a0`,`a1`,...) by doing the *inverse FFT* which is `O(d log d)`, but even there is a [substitue algorithm available](https://ethresear.ch/t/kate-commitments-from-the-lagrange-basis-without-ffts/6950/6) to do it in `O(d)` without applying (inverse)`FFT`.
 * You can prove multiple evalutions of `f(x)` at their respective `index`s, i.e. multiple `index=>value` i.e. `index1=>value1`, `index2=>value2` ... `indexk=>valuek` i.e. `k` data points using the single *opening* and *proof* 
     *  `q(x)` the quotient polynomial (to calculate proof) is now the quotient if we divide `f(x)` by  the zero polynomial `z(x) =(x-w^index1)*(x-w^index2)...(x-w^indexk)` 
     *   remainder `r(x)`  (`r(x)` is a max degree `k` polynomial that interpolates `index1=>value1`, `index2=>value2` ... `indexk`=`valuek` )
@@ -119,11 +119,23 @@ This is called *opening* the commitment at `r`, and `q([s])` is the *proof*. one
       
 In the sharded setup of the POS chain where the sharded data blobs will be represeted as a low degree polynomial (and extended for *erasure coding* into twice its size using the same *fitted* polynomial), the Kate commitment can be checked against *random* chunks to validate and establish *availabily* without needing *siblings datapoints* and hence enabling [random sampling](https://hackmd.io/yqfI6OPlRZizv9yPaD-8IQ#Data-sampling-and-sharding-in-POS-protocol).
 
-Now, for a state with possible `2^28` accounts, you would require a `2^28` degree polynomial for just a *flat* commitment construction. And any change in any one of those accounts will trigger the computation of the base commitment. Hence for the 4rth point of [ideal commitment](https://hackmd.io/yqfI6OPlRZizv9yPaD-8IQ#Why-Kate) we need a special construction [Verkle tries](https://hackmd.io/yqfI6OPlRZizv9yPaD-8IQ#Verkle-tries) which is similar to *merkle trees* but instead of ` o ((d-1) * log-d(N))` we will be doing better at `O( log-d(N) )` ridding ourselves from `(d-1)` factor.
+
+
+Now, for a state with possible `2^28` accounts, you would require a `2^28` degree polynomial for just a *flat* commitment construction. There are some downsides to that if updates and inserts are to be done. And any change in any one of those accounts will trigger the computation of the commitment (and more problematic witnesses/proofs)
+
+#### Updates to Kate
+* Any change into any of the lets say `k` `index=>value` points, let say at `indexk`, will require `k` to update the commitment again using the corresponding [Lagrange polys](https://notes.ethereum.org/nrQqhVpQRi6acQckwm1Ryg?view#Lagrange-polynomials)  ~`O(1)` per udate
+* However, since `f(x)` has changed, all the witness `q_i([s])` i.e. withness of `i` th `index=>value` will need to be updated ~ `O(N)`
+    * If we don't maintain precomputed `q_i[s]` *witnesses*, any witness calculation from **scratch** requires `O(N)`
+* [A construction to update Kate](https://ethresear.ch/t/updating-and-generating-kate-witnesses-in-amortized-sqrt-n-time/7520) in amortized `sqrt(N)`
+
+
+Hence for the 4rth point of [ideal commitment](https://hackmd.io/yqfI6OPlRZizv9yPaD-8IQ#Why-Kate) we need a special construction: **Verkel tries** 
 
 ## Verkle tries
 
-The ethereum state that needs to be represented is `2^28 ~= 16^7 ~= 250m` size `indexes=> values` map (possible accounts). If we just build a flat commitment using all of these indexes in one go, `d` we would need will be ~`2^28` and then despite our proof still being `constant order` of the size of `elliptical curve element` of 48 bytes, any tree compute or update will require full commitment calculation. Hence we need to move away from a flat structure to something called *[Verkle Trees](https://notes.ethereum.org/_N1mutVERDKtqGIEYc-Flw)* which you will notice is also a [trie](https://en.wikipedia.org/wiki/Trie) like its *merkle* counterpart.
+The ethereum state that needs to be represented is `2^28 ~= 16^7 ~= 250m` size `indexes=> values` map (possible accounts). If we just build a flat commitment (`d` we would need will be ~`2^28`) then despite our proof still being `O(1)` of the size of `elliptical curve element` of 48 bytes, any [insert or update](https://hackmd.io/yqfI6OPlRZizv9yPaD-8IQ?view#Updates-to-Kate) will require either `O(N)` updates to all precomputed *witnesses* (the `q_i(s)` of all the points) or `O(N)` on the fly computation per witness. 
+Hence we need to move away from a flat structure to something called *[Verkle Trees](https://notes.ethereum.org/_N1mutVERDKtqGIEYc-Flw)* which you will notice is also a [trie](https://en.wikipedia.org/wiki/Trie) like its *merkle* counterpart.
 
 ![](https://i.imgur.com/2nHMrfm.png)
 
@@ -131,9 +143,10 @@ i.e. Build a commitment tree in same way as merkle, where we can keep `d` low at
 * Each parent is the commitment that encodes the commitment of their children as children are a map of `index => child values` where `index` is the child's `index` at that particular parent node. 
 * Actually the parent's commitment encode the Hashed child nodes as the input to the commitment is  standarized `32` bytes size values ([check note on size](https://hackmd.io/yqfI6OPlRZizv9yPaD-8IQ#Note30-anyevery-value-in-the-indexesgtvalues-map-has-also-to-be-represented-on-an-elliptical-curve-as-curve-element-value-to-calculate-commitment-as-you-will-see-later-This-imposes-restriction-on-size-of-value-to-be-modulo-Fp--BLS-Curve-order--somewhere-between-31-32-bytes-For-simplicity-it-gets-restricted-to-31-bytes-any-bigger-value-will-need-to-be-chunkified-and-appropriately-represented-with-its-index)). 
 * The leaves encode the commitment to the chunk of  `32` byte hash of data that those leaves store or directly to data if its only `32` byte data as in case of proposed *State Tree* as mentioned in next section. ([check note on size](https://hackmd.io/yqfI6OPlRZizv9yPaD-8IQ#Note30-anyevery-value-in-the-indexesgtvalues-map-has-also-to-be-represented-on-an-elliptical-curve-as-curve-element-value-to-calculate-commitment-as-you-will-see-later-This-imposes-restriction-on-size-of-value-to-be-modulo-Fp--BLS-Curve-order--somewhere-between-31-32-bytes-For-simplicity-it-gets-restricted-to-31-bytes-any-bigger-value-will-need-to-be-chunkified-and-appropriately-represented-with-its-index))
-* to provide the proof of a branch (analogous to merkle branch proofs), a [multi-proof commitment](https://notes.ethereum.org/nrQqhVpQRi6acQckwm1Ryg) `D` can be generated along with its opening at point *relatively random* point `t` using fiat shamir heruristic.
+* to provide the proof of a branch (analogous to merkle branch proofs), a [multi-proof commitment](https://notes.ethereum.org/nrQqhVpQRi6acQckwm1Ryg) `D` can be generated along with its opening at point *relatively random* point `t` again using fiat shamir heruristic.
 
-
+#### Order
+* for witness proof computation instead of ` O ((d-1) * log-d(N))` we will be doing better at `O( log-d(N) )` ridding ourselves from `(d-1)` factor.
 
 
 ### Verkle Trees Construction Scenarios
@@ -154,9 +167,11 @@ Code will automatically become part of verkle trees as the part of unified state
 * header and code of a block are all part of a single depth-2 commitment tree
 * at max 4 witnesses for chunks with `WITNESS_CHUNK_COST` and one main `WITNESS_BRANCH_COST` for accessing account.
 
-### Updates to Verkle trees
-TBD
-hint: once we get the nodes to be updated in a verkle tree (by following updated leaves to the root and marking the nodes), we can update the commitments there by using **difference polynomials**
+### Order
+* Updates/inserts to the leaf `index=>value` will required `log_d(N)` commitment recomputes ~ `log_d(N)`
+* To generate proof, prover would also require evaluting `f_i(X)/(X-z_i)` for each of the branch commitment nodes ~`O( log_d N )`, each which would require ~`d` ops ~ `O( d log_d(N) )`
+* proof size `O( log_d(N) )`
+
 
 
 ## Data sampling and sharding in POS protocol
